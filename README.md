@@ -30,3 +30,10 @@ python retarget_arctic.py --task_id=phone_use_01
 Check `example_data/arctic` for all tasks. The data were generated from the "Sanity check" download section of ARCTIC from [here](https://github.com/zc-alexfan/arctic/blob/master/docs/data/README.md). We further solve for a scale factor and global pose to align the SMPLX annotations for the hand joints with the corresponding MANO annotations, which are the ones calibrated with the object annotations in this dataset.
 
 You can activate the flag `--obj_augm` to augment the initial pose of the object (check script for augmentation params). The interaction mesh is expressed wrt. the local object frame, so retargeting works out-of-the-box for different initial object poses.
+
+## TODOs
+
+- [x] ARCTIC demo 
+- [ ] Integrate more humanoid / hand models.
+- [ ] Make `viser` visualization more modular, add checkboxes / param boxes for object augmentations.
+- [ ] Hand-only retargeting demo, e.g. from DexYCB or HOI datasets.
