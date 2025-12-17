@@ -1,5 +1,10 @@
 Retargeting of **whole-body** human motion to humanoid robots for **dexterous** manipulation of **articulated** objects.
 
+<p align="center">
+  <img src="media/arctic_ketchup_snippet.gif" height="300" />
+  <img src="media/recording.gif" height="300" />
+</p>
+
 Currently support [unitree G1](https://github.com/unitreerobotics/unitree_ros) with [Brainco hand](https://github.com/unitreerobotics/unitree_ros/tree/master/robots/g1_with_brainco_hand), using example human-object interaction data from [ARCTIC](https://arctic.is.tue.mpg.de/). 
 
 We implement the interaction-preserving Laplacian deformation objective from [OmniRetarget](https://arxiv.org/pdf/2509.26633), using the JAX-based Levenberg–Marquardt solver from [VideoMimic](https://arxiv.org/pdf/2505.03729), implemented within the [PyRoki](https://chungmin99.github.io/pyroki/) framework.
