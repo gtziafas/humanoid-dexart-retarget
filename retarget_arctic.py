@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Tuple, TypedDict
 
 import jax
-from jax import lax
 import jax.numpy as jnp
 import jax_dataclasses as jdc
 import jaxlie
@@ -13,8 +12,6 @@ import pyroki as pk
 import viser
 from viser.extras import ViserUrdf
 from yourdfpy import URDF
-import json
-import trimesh
 from scipy.spatial.transform import Rotation
 
 from utils import (
@@ -257,7 +254,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
 
         time.sleep(0.02)
 
-
+@jdc.jit
 def solve_retargeting(
     robot: pk.Robot,
     robot_coll: pk.collision.RobotCollision,
