@@ -129,7 +129,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     # Example augmentation parameters (tune these or sample randomly)
     if obj_augm:
         delta_p = onp.array([0.2, -0.1, 0.0])                   # +20 cm in x
-        delta_rotvec = onp.array([onp.deg2rad(45), 0.0, onp.deg2rad(90)])  # +90 deg around z
+        delta_rotvec = onp.array([0.0, 0.0, onp.deg2rad(90)])  # +90 deg around z
         tm_idx = 20          # onset of object motion in frames
         tau_p = 60.0         # decay over ~2 seconds at 30 Hz
         tau_theta = 60.0     # same
