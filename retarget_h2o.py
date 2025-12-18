@@ -32,7 +32,7 @@ class RetargetingWeights(TypedDict):
 
 
 def main(urdf_path, asset_dir, task_id, obj_augm=False):
-    # HOI example data directory conventions (modify accordingly)
+    # H2O example data directory conventions (modify accordingly)
     subject_id = "subject1"
     folder = "o1"
 
@@ -657,7 +657,7 @@ if __name__ == "__main__":
         "--asset_dir",
         type=str,
         help="Root directory containing MANO, object poses and meshes.",
-        default="./example_data/hoi"
+        default="./example_data/h2o"
     )
     parser.add_argument(
         "--task_id",
