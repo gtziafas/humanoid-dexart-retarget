@@ -386,23 +386,6 @@ def solve_retargeting(
     # ----------------
     # Robot properties
     # ----------------
-    joints_to_move_less = jnp.array([
-        robot.joints.actuated_names.index(name) for name in [
-            'left_hip_pitch_joint',
-            'left_hip_roll_joint',
-            'left_hip_yaw_joint',
-            'left_knee_joint',
-            'left_ankle_pitch_joint',
-            'left_ankle_roll_joint',
-            'right_hip_pitch_joint',
-            'right_hip_roll_joint',
-            'right_hip_yaw_joint',
-            'right_knee_joint',
-            'right_ankle_pitch_joint',
-            'right_ankle_roll_joint',
-            ]
-        ]
-    )
 
     # - Foot indices.
     left_foot_idx  = robot.links.names.index("left_ankle_roll_link")
@@ -539,13 +522,13 @@ def solve_retargeting(
             100.0,
         ),
         # self-penetration
-        # pk.costs.self_collision_cost(
-        #     jax.tree.map(lambda x: x[None], robot),
-        #     jax.tree.map(lambda x: x[None], robot_coll),
-        #     var_joints,
-        #     margin=0.05,
-        #     weight=weights['self_collision'],
-        # ),
+        pk.costs.self_collision_cost(
+            jax.tree.map(lambda x: x[None], robot),
+            jax.tree.map(lambda x: x[None], robot_coll),
+            var_joints,
+            margin=0.05,
+            weight=weights['self_collision'],
+        ),
         # floor contact
         floor_contact_cost(
             var_Ts_world_root,
