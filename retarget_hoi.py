@@ -35,7 +35,6 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     # HOI example data directory conventions (modify accordingly)
     subject_id = "subject1"
     folder = "o1"
-    episode_len = -1
 
     # ----------------------------------------------------------------------
     # Load robot (G1 + Brainco hands)
@@ -49,7 +48,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     # ----------------------------------------------------------------------
     asset_path = Path(asset_dir)
     keypoints_path = asset_path / "mano" / subject_id / folder / (task_id + ".mano.npy")
-    mano_keypoints = onp.load(keypoints_path)[:episode_len]
+    mano_keypoints = onp.load(keypoints_path)
     if mano_keypoints.ndim == 2:
         mano_keypoints = mano_keypoints[None, ...]
     assert mano_keypoints.ndim == 3
@@ -63,7 +62,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     obj_mesh = trimesh.load(object_mesh_path)
 
     object_pose_path = asset_path / "object_pose" / subject_id / folder / (task_id + ".object.npy")
-    object_pose_list = onp.load(object_pose_path)[:episode_len].astype(onp.float32)  # (T,4,4)
+    object_pose_list = onp.load(object_pose_path).astype(onp.float32)  # (T,4,4)
     object_poses_se3 = jaxlie.SE3.from_matrix(jnp.array(object_pose_list))
 
     # ----------------------------------------------------------------------
