@@ -23,7 +23,7 @@ pip install -U "jax[cuda12]"
 for the the appropriate CUDA driver version in your machine.
 
 ## Usage
-We support two versions, one with full-body supervision (SMPLX) from [ARCTIC](https://arctic.is.tue.mpg.de/), which also contains articulated object URDF models, and one with hands-only supervision (MANO) from the [HOI](https://github.com/taeinkwon/h2odataset) dataset.
+We support two versions, one with full-body supervision (SMPLX) from [ARCTIC](https://arctic.is.tue.mpg.de/), which also contains articulated object URDF models, and one with hands-only supervision (MANO) from the [H2O](https://github.com/taeinkwon/h2odataset) dataset.
 
 ### ARCTIC
 Run:
