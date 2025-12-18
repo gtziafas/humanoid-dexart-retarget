@@ -36,7 +36,7 @@ Check `example_data/arctic` for all tasks. The data were generated from the "San
 ```
 python retarget_h2o.py --task_id=milk
 ```
-Check `example_data/hoi` for all tasks. The data were downloaded from the "pose" version of the dataset. We further identify a reference frame aligned with the table (besides a z-axis offset) and express all annotations wrt. this frame. 
+Check `example_data/h2o` for all tasks. The data were downloaded from the "pose" version of the dataset. We further identify a reference frame aligned with the table (besides a z-axis offset) and express all annotations wrt. this frame. 
 
 Since we only have MANO keypoints, and not for the entire body, we need some priors to ensure the robot maintains a human-like posture. We add adittional costs to implement this, but for now tend to be finicky, and their weights might require fine-tuning for each scene.
 
