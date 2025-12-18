@@ -147,7 +147,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     weights = pk.viewer.WeightTuner(
         server,
         RetargetingWeights(  # type: ignore
-            laplacian_deformation=1.0,
+            laplacian_deformation=2.0,
             joint_smoothness=1.0,
             root_smoothness=50.0,
             posture_prior=5.0,
