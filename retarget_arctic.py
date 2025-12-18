@@ -99,23 +99,15 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     # Retargeting index mapping: SMPLX joints -> G1+Brainco links
     # ----------------------------------------------------------------------
     (
-        smplx_joint_retarget_indices_np,
-        g1_joint_retarget_indices_np,
+        smplx_joint_retarget_indices,
+        g1_joint_retarget_indices,
     ) = get_mapping_from_smplx_to_g1_29_brainco()
 
     smplx_joint_retarget_indices_np = onp.array(
-        smplx_joint_retarget_indices_np, dtype=onp.int32
+        smplx_joint_retarget_indices, dtype=onp.int32
     )
     g1_joint_retarget_indices_np = onp.array(
-        g1_joint_retarget_indices_np, dtype=onp.int32
-    )
-
-    # JAX versions
-    smplx_joint_retarget_indices = jnp.array(
-        smplx_joint_retarget_indices_np, dtype=jnp.int32
-    )
-    g1_joint_retarget_indices = jnp.array(
-        g1_joint_retarget_indices_np, dtype=jnp.int32
+        g1_joint_retarget_indices, dtype=onp.int32
     )
 
     # Laplacian source interaction mesh
@@ -435,13 +427,13 @@ def solve_retargeting(
             100.0,
         ),
         # self-penetration
-        pk.costs.self_collision_cost(
-            jax.tree.map(lambda x: x[None], robot),
-            jax.tree.map(lambda x: x[None], robot_coll),
-            var_joints,
-            margin=0.05,
-            weight=weights['self_collision'],
-        ),
+        # pk.costs.self_collision_cost(
+        #     jax.tree.map(lambda x: x[None], robot),
+        #     jax.tree.map(lambda x: x[None], robot_coll),
+        #     var_joints,
+        #     margin=0.05,
+        #     weight=weights['self_collision'],
+        # ),
         # floor contact
         floor_contact_cost(
             var_Ts_world_root,

@@ -54,7 +54,7 @@ def create_conn_tree(robot: pk.Robot, link_indices: jnp.ndarray) -> jnp.ndarray:
     return conn_matrix
 
 
-def create_laplacian_interaction_mesh(object_keypoints, object_poses_se3, smplx_keypoints, smplx_joint_retarget_indices):
+def create_laplacian_interaction_mesh(object_keypoints, object_poses_se3, src_keypoints, src_joint_retarget_indices):
     # ----------------------------------------------------------------------
     # Laplacian interaction mesh precomputation (source motion)
     #
@@ -66,8 +66,8 @@ def create_laplacian_interaction_mesh(object_keypoints, object_poses_se3, smplx_
     # Laplacian coordinates are then precomputed for the source
     # (human + object) trajectory.
     # ----------------------------------------------------------------------
-    num_timesteps = smplx_keypoints.shape[0]
-    num_body_kp = smplx_joint_retarget_indices.shape[0]
+    num_timesteps = src_keypoints.shape[0]
+    num_body_kp = src_joint_retarget_indices.shape[0]
     num_obj_kp = object_keypoints.shape[1]
     num_total_kp = num_body_kp + num_obj_kp
 
@@ -77,7 +77,7 @@ def create_laplacian_interaction_mesh(object_keypoints, object_poses_se3, smplx_
 
     for t in range(num_timesteps):
         # Body points at this timestep
-        smplx_t = smplx_keypoints[t, smplx_joint_retarget_indices, :]  # [Nb_body, 3]
+        smplx_t = src_keypoints[t, src_joint_retarget_indices, :]  # [Nb_body, 3]
 
         # Object points at this timestem -- local frame
         obj_t_local = object_keypoints[t]
@@ -129,7 +129,7 @@ def create_laplacian_interaction_mesh(object_keypoints, object_poses_se3, smplx_
 
     for t in range(num_timesteps):
         # body at t
-        smplx_t = smplx_keypoints[t, smplx_joint_retarget_indices, :]  # [Nb_body, 3]
+        smplx_t = src_keypoints[t, src_joint_retarget_indices, :]  # [Nb_body, 3]
 
         # object at t
         obj_t_local = object_keypoints[t]                       # [No, 3]
@@ -153,7 +153,6 @@ def create_laplacian_interaction_mesh(object_keypoints, object_poses_se3, smplx_
     neighbor_degree = jnp.array(degree_np)              # [T, N_total, 1]
 
     return laplacian_L_source, neighbor_idx, neighbor_mask, neighbor_degree
-
 
 
 SMPL_JOINT_NAMES = [
@@ -800,7 +799,10 @@ def get_mapping_from_mhr_to_g1_29_brainco() -> tuple[jnp.ndarray, jnp.ndarray]:
 
 def get_mapping_from_mano_to_brainco(robot: pk.Robot) -> tuple[jnp.ndarray, jnp.ndarray]:
     """Get the mapping indices between MANO and BRAINCO joints."""
-    BRAINCO_TO_MANO_MAPPING = {v: k for k, v in MANO_TO_SHADOW_MAPPING.items()}
+    BRAINCO_TO_MANO_MAPPING = {
+        **{v: k for k, v in MANO_TO_BRAINCO_MAPPING['left'].items()},
+        **{v: k + 21 for k, v in MANO_TO_BRAINCO_MAPPING['right'].items()}
+    }
     shadow_joint_idx = []
     mano_joint_idx = []
     link_names = robot.links.names
@@ -809,7 +811,7 @@ def get_mapping_from_mano_to_brainco(robot: pk.Robot) -> tuple[jnp.ndarray, jnp.
             shadow_joint_idx.append(i)
             mano_joint_idx.append(BRAINCO_TO_MANO_MAPPING[link_name])
 
-    return jnp.array(shadow_joint_idx), jnp.array(mano_joint_idx)
+    return jnp.array(mano_joint_idx), jnp.array(shadow_joint_idx)
 
 def get_mapping_from_smplx_to_mano() -> tuple[jnp.ndarray, jnp.ndarray]:
     # MANO: (42,), first left then right
