@@ -132,6 +132,49 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     grid = server.scene.add_grid("/grid", 2.0, 2.0)
     grid.position = onp.array([0, 0, 0.125])
 
+    # ----------------------------------------------------------------------
+    # Debug toggles (NEW)
+    # ----------------------------------------------------------------------
+    show_human_kps = server.gui.add_checkbox("human keypoints", True)
+    show_object_kps = server.gui.add_checkbox("object keypoints", True)
+    show_object_frame = server.gui.add_checkbox("object frame", False)
+    show_world_frame = server.gui.add_checkbox("world frame", False)
+
+    # World frame axes (create once, toggle visibility)
+    world_axes = server.scene.add_frame(
+        "/world_axes", 
+        show_axes=True,
+        axes_radius=0.005,
+        axes_length=0.12,
+    )
+    world_axes.position = onp.array([0.0, 0.0, 0.0])
+    world_axes.wxyz = onp.array([1.0, 0.0, 0.0, 0.0])  # identity
+
+    # Object local axes (create once, updated per timestep)
+    object_axes = server.scene.add_frame(
+        "/object_axes", 
+        show_axes=True, 
+        axes_radius=0.005,  
+        axes_length=0.12,   
+    )
+
+    # Point clouds (create once, update per timestep)
+    human_pc = server.scene.add_point_cloud(
+        "/target_keypoints",
+        onp.array(smplx_keypoints[0]),
+        onp.array((0, 0, 255), dtype=onp.uint8)[None].repeat(num_smplx_joints, axis=0),
+        point_size=0.005,
+    )
+
+    obj_pose_0 = jax.tree.map(lambda x: x[0], object_poses_se3)
+    obj_kps_world_0 = obj_pose_0.apply(object_keypoints_local[0])
+    object_pc = server.scene.add_point_cloud(
+        "/object_keypoints",
+        onp.array(obj_kps_world_0),
+        onp.array((255, 0, 0), dtype=onp.uint8)[None].repeat(obj_kps_world_0.shape[0], axis=0),
+        point_size=0.005,
+    )
+    
     # ---- Weights panel (unchanged) ----
     weights = pk.viewer.WeightTuner(
         server,
@@ -195,49 +238,6 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
 
     gen_button = server.gui.add_button("Retarget!")
     gen_button.on_click(lambda _: generate_trajectory())
-
-    # ----------------------------------------------------------------------
-    # Debug toggles (NEW)
-    # ----------------------------------------------------------------------
-    show_human_kps = server.gui.add_checkbox("human keypoints", True)
-    show_object_kps = server.gui.add_checkbox("object keypoints", True)
-    show_object_frame = server.gui.add_checkbox("object frame", False)
-    show_world_frame = server.gui.add_checkbox("world frame", False)
-
-    # World frame axes (create once, toggle visibility)
-    world_axes = server.scene.add_frame(
-        "/world_axes", 
-        show_axes=True,
-        axes_radius=0.005,
-        axes_length=0.12,
-    )
-    world_axes.position = onp.array([0.0, 0.0, 0.0])
-    world_axes.wxyz = onp.array([1.0, 0.0, 0.0, 0.0])  # identity
-
-    # Object local axes (create once, updated per timestep)
-    object_axes = server.scene.add_frame(
-        "/object_axes", 
-        show_axes=True, 
-        axes_radius=0.005,  
-        axes_length=0.12,   
-    )
-
-    # Point clouds (create once, update per timestep)
-    human_pc = server.scene.add_point_cloud(
-        "/target_keypoints",
-        onp.array(smplx_keypoints[0]),
-        onp.array((0, 0, 255), dtype=onp.uint8)[None].repeat(num_smplx_joints, axis=0),
-        point_size=0.005,
-    )
-
-    obj_pose_0 = jax.tree.map(lambda x: x[0], object_poses_se3)
-    obj_kps_world_0 = obj_pose_0.apply(object_keypoints_local[0])
-    object_pc = server.scene.add_point_cloud(
-        "/object_keypoints",
-        onp.array(obj_kps_world_0),
-        onp.array((255, 0, 0), dtype=onp.uint8)[None].repeat(obj_kps_world_0.shape[0], axis=0),
-        point_size=0.005,
-    )
 
     # ----------------------------------------------------------------------
     # Object augmentation panel (NEW; collapsed if supported)
