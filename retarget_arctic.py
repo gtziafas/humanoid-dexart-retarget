@@ -23,6 +23,7 @@ class RetargetingWeights(TypedDict):
     root_smoothness: float       # root translation smoothness.
     laplacian_deformation: float # Laplacian deformation energy over interaction mesh (https://arxiv.org/pdf/2509.26633).
     floor_contact: float         # place the robot's foot on the floor.
+    self_collision: float        # self-penetration penalty.
 
 def main(urdf_path, asset_dir, task_id, obj_augm=False):
     """
