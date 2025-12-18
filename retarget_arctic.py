@@ -205,12 +205,22 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     show_world_frame = server.gui.add_checkbox("world frame", False)
 
     # World frame axes (create once, toggle visibility)
-    world_axes = server.scene.add_frame("/world_axes", show_axes=True)
+    world_axes = server.scene.add_frame(
+        "/world_axes", 
+        show_axes=True,
+        axes_radius=0.005,
+        axes_length=0.12,
+    )
     world_axes.position = onp.array([0.0, 0.0, 0.0])
     world_axes.wxyz = onp.array([1.0, 0.0, 0.0, 0.0])  # identity
 
     # Object local axes (create once, updated per timestep)
-    object_axes = server.scene.add_frame("/object_axes", show_axes=True)
+    object_axes = server.scene.add_frame(
+        "/object_axes", 
+        show_axes=True, 
+        axes_radius=0.005,  
+        axes_length=0.12,   
+    )
 
     # Point clouds (create once, update per timestep)
     human_pc = server.scene.add_point_cloud(
