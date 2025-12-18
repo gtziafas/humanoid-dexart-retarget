@@ -32,9 +32,9 @@ python retarget_arctic.py --task_id=phone_use_01
 ```
 Check `example_data/arctic` for all tasks. The data were generated from the "Sanity check" download section of ARCTIC from [here](https://github.com/zc-alexfan/arctic/blob/master/docs/data/README.md). We further solve for a scale factor and global pose to align the SMPLX annotations for the hand joints with the corresponding MANO annotations, which are the ones calibrated with the object annotations in this dataset.
 
-### HOI
+### H2O
 ```
-python retarget_hoi.py --task_id=milk
+python retarget_h2o.py --task_id=milk
 ```
 Check `example_data/hoi` for all tasks. The data were downloaded from the "pose" version of the dataset. We further identify a reference frame aligned with the table (besides a z-axis offset) and express all annotations wrt. this frame. 
 
