@@ -22,7 +22,7 @@ class RetargetingWeights(TypedDict):
     joint_smoothness: float      # joint smoothness.
     root_smoothness: float       # root translation smoothness.
     laplacian_deformation: float # Laplacian deformation energy over interaction mesh (https://arxiv.org/pdf/2509.26633).
-    floor_contact: float         # place the robot's foot on the floor.
+    floor_contact: float         # keep the robot's foot in contact with the floor.
     self_collision: float        # self-penetration penalty.
 
 def main(urdf_path, asset_dir, task_id, obj_augm=False):
@@ -140,20 +140,22 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
         object_poses_se3_aug = object_poses_se3
 
     # ----------------------------------------------------------------------
-    # Viewer setup
+    # Viewer setup (UPDATED: toggles + frames + augmentation panel)
     # ----------------------------------------------------------------------
     server = viser.ViserServer()
     base_frame = server.scene.add_frame("/base", show_axes=False)
     urdf_vis = ViserUrdf(server, urdf, root_node_name="/base")
+
     playing = server.gui.add_checkbox("playing", False)
-    timestep_slider = server.gui.add_slider(
-        "timestep", 0, max(0, num_timesteps - 1), 1, 0
-    )
+    timestep_slider = server.gui.add_slider("timestep", 0, max(0, num_timesteps - 1), 1, 0)
+
     object_root = server.scene.add_frame("/object_root", show_axes=False)
     object_vis = ViserUrdf(server, obj_urdf, root_node_name="/object_root")
-    grid = server.scene.add_grid("/grid", 2.0, 2.0)
-    grid.position = onp.array([0, 0, 0.125])  
 
+    grid = server.scene.add_grid("/grid", 2.0, 2.0)
+    grid.position = onp.array([0, 0, 0.125])
+
+    # ---- Weights panel (unchanged) ----
     weights = pk.viewer.WeightTuner(
         server,
         RetargetingWeights(  # type: ignore
@@ -168,12 +170,35 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     Ts_world_root, joints = None, None
 
     # ----------------------------------------------------------------------
-    # Button to run retargeting
+    # Retargeting (UPDATED: will use augmented or non-augmented object poses)
     # ----------------------------------------------------------------------
+    object_pose_list_aug = object_pose_list
+    object_poses_se3_aug = object_poses_se3
+
     def generate_trajectory():
-        nonlocal Ts_world_root, joints
+        nonlocal Ts_world_root, joints, object_pose_list_aug, object_poses_se3_aug
 
         gen_button.disabled = True
+
+        # build augmented object trajectory from UI state
+        if aug_enable.value:
+            dp = onp.array([float(delta_px.value), float(delta_py.value), float(delta_pz.value)], dtype=onp.float32)
+            dr_deg = onp.array([float(delta_rx.value), float(delta_ry.value), float(delta_rz.value)], dtype=onp.float32)
+            dr = onp.deg2rad(dr_deg).astype(onp.float32)
+
+            object_pose_list_aug = augment_object_trajectory(
+                object_pose_list,
+                delta_p=dp,
+                delta_rotvec=dr,
+                tm_idx=int(tm_idx.value),
+                tau_p=float(tau_p.value),
+                tau_theta=float(tau_theta.value),
+                dt=float(dt.value),
+            )
+            object_poses_se3_aug = jaxlie.SE3.from_matrix(jnp.array(object_pose_list_aug))
+        else:
+            object_pose_list_aug = object_pose_list
+            object_poses_se3_aug = object_poses_se3
 
         current_weights = weights.get_weights()  # type: ignore
 
@@ -181,7 +206,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
             robot=robot,
             robot_coll=robot_coll,
             object_keypoints=object_keypoints_local,           # [T, N_obj, 3]
-            object_poses=object_poses_se3_aug,                 # [T] SE3
+            object_poses=object_poses_se3_aug,                 # [T] SE3 (aug or not)
             g1_joint_retarget_indices_body=g1_joint_retarget_indices,
             weights=current_weights,
             laplacian_L_source=laplacian_L_source,         # [T, N_total, 3]
@@ -194,19 +219,104 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     gen_button = server.gui.add_button("Retarget!")
     gen_button.on_click(lambda _: generate_trajectory())
 
-    # Run once on start.
+    # ----------------------------------------------------------------------
+    # Debug toggles (NEW)
+    # ----------------------------------------------------------------------
+    show_human_kps = server.gui.add_checkbox("human keypoints", True)
+    show_object_kps = server.gui.add_checkbox("object keypoints", True)
+    show_object_frame = server.gui.add_checkbox("object frame", False)
+    show_world_frame = server.gui.add_checkbox("world frame", False)
+
+    # World frame axes (create once, toggle visibility)
+    world_axes = server.scene.add_frame("/world_axes", show_axes=True)
+    world_axes.position = onp.array([0.0, 0.0, 0.0])
+    world_axes.wxyz = onp.array([1.0, 0.0, 0.0, 0.0])  # identity
+
+    # Object local axes (create once, updated per timestep)
+    object_axes = server.scene.add_frame("/object_axes", show_axes=True)
+
+    # Point clouds (create once, update per timestep)
+    human_pc = server.scene.add_point_cloud(
+        "/target_keypoints",
+        onp.array(smplx_keypoints[0]),
+        onp.array((0, 0, 255), dtype=onp.uint8)[None].repeat(num_smplx_joints, axis=0),
+        point_size=0.005,
+    )
+
+    obj_pose_0 = jax.tree.map(lambda x: x[0], object_poses_se3)
+    obj_kps_world_0 = obj_pose_0.apply(object_keypoints_local[0])
+    object_pc = server.scene.add_point_cloud(
+        "/object_keypoints",
+        onp.array(obj_kps_world_0),
+        onp.array((255, 0, 0), dtype=onp.uint8)[None].repeat(obj_kps_world_0.shape[0], axis=0),
+        point_size=0.005,
+    )
+
+    # ----------------------------------------------------------------------
+    # Object augmentation panel (NEW; collapsed if supported)
+    # ----------------------------------------------------------------------
+    aug_enable = server.gui.add_checkbox("Object Augmentation", obj_augm)
+
+    try:
+        aug_folder = server.gui.add_folder("Augmentation Params")
+        # collapse by default if supported
+        if hasattr(aug_folder, "is_open"):
+            aug_folder.is_open = False
+        elif hasattr(aug_folder, "open"):
+            aug_folder.open = False
+    except Exception:
+        aug_folder = None
+
+    def _add_aug_controls():
+        # Translation (meters)
+        _delta_px = server.gui.add_number("delta_px (m)", 0.2)
+        _delta_py = server.gui.add_number("delta_py (m)", -0.1)
+        _delta_pz = server.gui.add_number("delta_pz (m)", 0.0)
+
+        # Rotation (degrees about x,y,z)
+        _delta_rx = server.gui.add_number("delta_rx (deg)", 0.0)
+        _delta_ry = server.gui.add_number("delta_ry (deg)", 0.0)
+        _delta_rz = server.gui.add_number("delta_rz (deg)", 90.0)
+
+        # Timing
+        _tm_idx = server.gui.add_number("tm_idx (frames)", 20)
+        _tau_p = server.gui.add_number("tau_p", 60.0)
+        _tau_theta = server.gui.add_number("tau_theta", 60.0)
+        _dt = server.gui.add_number("dt", 1.0)
+        return _delta_px, _delta_py, _delta_pz, _delta_rx, _delta_ry, _delta_rz, _tm_idx, _tau_p, _tau_theta, _dt
+
+    if aug_folder is not None:
+        with aug_folder:
+            (delta_px, delta_py, delta_pz,
+             delta_rx, delta_ry, delta_rz,
+             tm_idx, tau_p, tau_theta, dt) = _add_aug_controls()
+
+            apply_aug_button = server.gui.add_button("Apply Augmentation + Retarget")
+            apply_aug_button.on_click(lambda _: generate_trajectory())
+    else:
+        (delta_px, delta_py, delta_pz,
+         delta_rx, delta_ry, delta_rz,
+         tm_idx, tau_p, tau_theta, dt) = _add_aug_controls()
+
+        apply_aug_button = server.gui.add_button("Apply Augmentation + Retarget")
+        apply_aug_button.on_click(lambda _: generate_trajectory())
+
+    # Also re-run when toggling augmentation checkbox (optional convenience)
+    aug_enable.on_update(lambda _: generate_trajectory())
+
+    # Run once on start (now uses GUI augmentation state)
     generate_trajectory()
     assert Ts_world_root is not None and joints is not None
 
     # ----------------------------------------------------------------------
-    # Visualization loop
+    # Visualization loop (UPDATED: show/hide + reuse handles + obj frame)
     # ----------------------------------------------------------------------
     while True:
         with server.atomic():
             if playing.value and num_timesteps > 1:
                 timestep_slider.value = (timestep_slider.value + 1) % num_timesteps
 
-            tstep = timestep_slider.value
+            tstep = int(timestep_slider.value)
 
             # Root pose.
             base_frame.wxyz = onp.array(Ts_world_root.wxyz_xyz[tstep][:4])
@@ -215,37 +325,38 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
             # Robot configuration.
             urdf_vis.update_cfg(onp.array(joints[tstep]))
 
-            # Target SMPLX keypoints as blue point cloud (for debugging/visualization).
-            server.scene.add_point_cloud(
-                "/target_keypoints",
-                onp.array(smplx_keypoints[tstep]),
-                onp.array((0, 0, 255))[None].repeat(num_smplx_joints, axis=0),
-                point_size=0.005,
-            )
+            # World frame toggle
+            world_axes.visible = bool(show_world_frame.value)
 
-            # Object mesh and keypoints.
+            # Human keypoints toggle + update (reuse handle)
+            human_pc.visible = bool(show_human_kps.value)
+            if human_pc.visible:
+                human_pc.points = onp.array(smplx_keypoints[tstep])
+
+            # Object pose (augmented or not)
             t_obj = min(tstep, object_pose_list_aug.shape[0] - 1)
             obj_pose_t = jax.tree.map(lambda x: x[t_obj], object_poses_se3_aug)
-            
-            # 1) world pose (frame transform)
+
             object_root.position = onp.array(obj_pose_t.wxyz_xyz[4:])
             object_root.wxyz = onp.array(obj_pose_t.wxyz_xyz[:4])
 
-            # 2) articulation DOF
-            a = float(object_articulation[t_obj])  # scalar in [0, 1]
+            # articulation DOF
+            a = float(object_articulation[t_obj])
             object_vis.update_cfg(onp.array([a], dtype=onp.float32))
 
-            # 3) Visualize sampled object keypoints.
-            object_keypoints_world = obj_pose_t.apply(object_keypoints_local[tstep])
-            server.scene.add_point_cloud(
-                "/object_keypoints",
-                onp.array(object_keypoints_world),
-                onp.array((255, 0, 0), dtype=onp.uint8)[None]
-                .repeat(object_keypoints_world.shape[0], axis=0),
-                point_size=0.005,
-            )
+            # Object local frame toggle + update
+            object_axes.visible = bool(show_object_frame.value)
+            if object_axes.visible:
+                object_axes.position = onp.array(obj_pose_t.wxyz_xyz[4:])
+                object_axes.wxyz = onp.array(obj_pose_t.wxyz_xyz[:4])
 
-        time.sleep(0.02)
+            # Object keypoints toggle + update (reuse handle)
+            object_pc.visible = bool(show_object_kps.value)
+            if object_pc.visible:
+                object_keypoints_world = obj_pose_t.apply(object_keypoints_local[tstep])
+                object_pc.points = onp.array(object_keypoints_world)
+
+        time.sleep(0.03)
 
 @jdc.jit
 def solve_retargeting(
@@ -399,7 +510,7 @@ def solve_retargeting(
         )
 
     @jaxls.Cost.create_factory
-    def root_smoothness(
+    def root_smoothness_cost(
         var_values: jaxls.VarValues,
         var_Ts_world_root_curr: jaxls.SE3Var,
         var_Ts_world_root_prev: jaxls.SE3Var,
@@ -454,7 +565,7 @@ def solve_retargeting(
         )
         # Root smoothness
         costs.append(
-            root_smoothness(
+            root_smoothness_cost(
                 jaxls.SE3Var(jnp.arange(1, timesteps)),
                 jaxls.SE3Var(jnp.arange(0, timesteps - 1)),
             )
