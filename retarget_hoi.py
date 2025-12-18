@@ -150,7 +150,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
         RetargetingWeights(  # type: ignore
             laplacian_deformation=1.0,
             joint_smoothness=1.0,
-            root_smoothness=10.0,
+            root_smoothness=50.0,
             posture_prior=5.0,
             root_upright=5.0,
             arm_prior=0.2,

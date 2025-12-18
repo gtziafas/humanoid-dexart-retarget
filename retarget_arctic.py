@@ -147,7 +147,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
         axes_radius=0.005,
         axes_length=0.12,
     )
-    world_axes.position = onp.array([0.0, 0.0, 0.0])
+    world_axes.position = onp.array([0.0, 0.0, 0.125])
     world_axes.wxyz = onp.array([1.0, 0.0, 0.0, 0.0])  # identity
 
     # Object local axes (create once, updated per timestep)
@@ -174,7 +174,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
         onp.array((255, 0, 0), dtype=onp.uint8)[None].repeat(obj_kps_world_0.shape[0], axis=0),
         point_size=0.005,
     )
-    
+
     # ---- Weights panel (unchanged) ----
     weights = pk.viewer.WeightTuner(
         server,
