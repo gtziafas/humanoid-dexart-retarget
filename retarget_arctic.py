@@ -116,29 +116,6 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
         object_keypoints_local, object_poses_se3, smplx_keypoints, smplx_joint_retarget_indices_np
     )
 
-    # Example augmentation parameters (tune these or sample randomly)
-    if obj_augm:
-        delta_p = onp.array([0.2, -0.1, 0.0])                   # +20 cm in x
-        delta_rotvec = onp.array([0.0, 0.0, onp.deg2rad(90)])  # +90 deg around z
-        tm_idx = 20          # onset of object motion in frames
-        tau_p = 60.0         # decay over ~2 seconds at 30 Hz
-        tau_theta = 60.0     # same
-
-        object_pose_list_aug = augment_object_trajectory(
-            object_pose_list,
-            delta_p=delta_p,
-            delta_rotvec=delta_rotvec,
-            tm_idx=tm_idx,
-            tau_p=tau_p,
-            tau_theta=tau_theta,
-            dt=1.0,         # or 1/30.0 if you want seconds
-        )
-
-        object_poses_se3_aug = jaxlie.SE3.from_matrix(jnp.array(object_pose_list_aug))
-    else:
-        object_pose_list_aug = object_pose_list
-        object_poses_se3_aug = object_poses_se3
-
     # ----------------------------------------------------------------------
     # Viewer setup (UPDATED: toggles + frames + augmentation panel)
     # ----------------------------------------------------------------------
