@@ -25,6 +25,7 @@ class RetargetingWeights(TypedDict):
     laplacian_deformation: float    # Laplacian deformation energy over interaction mesh (https://arxiv.org/pdf/2509.26633).
     floor_contact: float            # keep the robot's foot in contact with the floor.
     self_collision: float           # self-penetration penalty.
+    foot_skating: float             # penalize the robot's foot from moving when it is in contact with the floor.
     # priors for maintaining human-like posture.
     posture_prior: float            # keep robot body as close to canonical posture as possible.
     arm_prior: float                # separate weights for shoulders + elbows.
@@ -155,6 +156,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
             arm_prior=0.2,
             self_collision=0.5,
             floor_contact=5.0,
+            foot_skating=20.0,
         ),
     )
 
@@ -580,6 +582,37 @@ def solve_retargeting(
             *  weights["root_upright"]
         )
 
+    @jaxls.Cost.create_factory
+    def foot_skating_cost(
+        var_values: jaxls.VarValues,
+        var_Ts_world_root: jaxls.SE3Var,
+        var_robot_cfg: jaxls.Var[jnp.ndarray],
+        var_Ts_world_root_prev: jaxls.SE3Var,
+        var_robot_cfg_prev: jaxls.Var[jnp.ndarray],
+    ) -> jax.Array:
+        """Cost to penalize the robot for skating."""
+        T_world_root = var_values[var_Ts_world_root]
+        robot_cfg = var_values[var_robot_cfg]
+        T_root_link = jaxlie.SE3(robot.forward_kinematics(cfg=robot_cfg))
+        T_link = T_world_root @ T_root_link
+        left_foot_pos = T_link.translation()[left_foot_idx]
+        right_foot_pos = T_link.translation()[right_foot_idx]
+
+        T_world_root_prev = var_values[var_Ts_world_root_prev]
+        robot_cfg_prev = var_values[var_robot_cfg_prev]
+        T_root_link_prev = jaxlie.SE3(robot.forward_kinematics(cfg=robot_cfg_prev))
+        T_link_prev = T_world_root_prev @ T_root_link_prev
+        left_foot_pos_prev = T_link_prev.translation()[left_foot_idx]
+        right_foot_pos_prev = T_link_prev.translation()[right_foot_idx]
+
+        # Assuming feet always in floor contact in retargeting data.
+        skating_cost_left  = left_foot_pos - left_foot_pos_prev
+        skating_cost_right = right_foot_pos - right_foot_pos_prev
+
+        return (
+            jnp.stack([skating_cost_left, skating_cost_right]) * weights["foot_skating"]
+        )
+    
     costs: list[jaxls.Cost] = [
         laplacian_deformation_cost(
             var_Ts_world_root,
@@ -629,6 +662,15 @@ def solve_retargeting(
             root_smoothness_cost(
                 jaxls.SE3Var(jnp.arange(1, timesteps)),
                 jaxls.SE3Var(jnp.arange(0, timesteps - 1)),
+            )
+        )
+        # Foot skating
+        costs.append(
+            foot_skating_cost(
+                jaxls.SE3Var(jnp.arange(1, timesteps)),
+                robot.joint_var_cls(jnp.arange(1, timesteps)),
+                jaxls.SE3Var(jnp.arange(0, timesteps - 1)),
+                robot.joint_var_cls(jnp.arange(0, timesteps - 1)),
             )
         )
 
