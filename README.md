@@ -2,7 +2,7 @@ Retargeting of **whole-body** human motion to humanoid robots for **dexterous** 
 
 <p align="center">
   <img src="media/arctic_ketchup_snippet.gif" height="300" />
-  <img src="media/recording.gif" height="300" />
+  <img src="media/recording_inspire.gif" height="300" />
 </p>
 
 Currently support [unitree G1](https://github.com/unitreerobotics/unitree_ros) with either [Inspire RH56DFX](https://en.inspire-robots.com/product/rh56dfx) or [Brainco](https://github.com/unitreerobotics/unitree_ros/tree/master/robots/g1_with_brainco_hand) hands, using MoCap-based human-object interaction data. 
