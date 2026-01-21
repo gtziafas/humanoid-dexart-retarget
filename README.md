@@ -5,7 +5,7 @@ Retargeting of **whole-body** human motion to humanoid robots for **dexterous** 
   <img src="media/recording.gif" height="300" />
 </p>
 
-Currently support [unitree G1](https://github.com/unitreerobotics/unitree_ros) with [Brainco hand](https://github.com/unitreerobotics/unitree_ros/tree/master/robots/g1_with_brainco_hand), using MoCap-based human-object interaction data. 
+Currently support [unitree G1](https://github.com/unitreerobotics/unitree_ros) with either [Inspire RH56DFX](https://en.inspire-robots.com/product/rh56dfx) or [Brainco](https://github.com/unitreerobotics/unitree_ros/tree/master/robots/g1_with_brainco_hand) hands, using MoCap-based human-object interaction data. 
 
 We implement the interaction-preserving Laplacian deformation objective from [OmniRetarget](https://arxiv.org/pdf/2509.26633), using the JAX-based Levenberg–Marquardt solver from [VideoMimic](https://arxiv.org/pdf/2505.03729), implemented within the [PyRoki](https://chungmin99.github.io/pyroki/) framework.
 
