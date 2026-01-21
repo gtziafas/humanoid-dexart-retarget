@@ -561,7 +561,7 @@ if __name__ == "__main__":
         "--urdf_path",
         type=str,
         help="Path to robot URDF (e.g., g1_29dof_mode_15_brainco_hand.urdf)",
-        default="./assets/g1_with_brainco_hand/g1_29dof_mode_15_brainco_hand.urdf"
+        default="./assets/g1_with_inspire_hand/g1_29dof_rev_1_0_with_inspire_hands.urdf"
     )
     parser.add_argument(
         "--asset_dir",
