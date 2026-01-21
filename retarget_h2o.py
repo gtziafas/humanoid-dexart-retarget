@@ -16,7 +16,7 @@ from scipy.spatial.transform import Rotation
 import trimesh
 
 from utils import (
-    get_mapping_from_mano_to_brainco, augment_object_trajectory, create_laplacian_interaction_mesh
+    get_mapping_from_mano_to_inspire, augment_object_trajectory, create_laplacian_interaction_mesh
 )
 
 class RetargetingWeights(TypedDict):
@@ -72,9 +72,9 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     object_keypoints_local = jnp.array(obj_mesh.vertices[None, kps_rnd_idx].repeat(num_timesteps, 0))
 
     # ----------------------------------------------------------------------
-    # Retargeting index mapping: MANO joints -> G1+Brainco links
+    # Retargeting index mapping: MANO joints -> G1+Brainco/Inspire links
     # ----------------------------------------------------------------------
-    mano_joint_retarget_indices, g1_joint_retarget_indices = get_mapping_from_mano_to_brainco(robot)
+    mano_joint_retarget_indices, g1_joint_retarget_indices = get_mapping_from_mano_to_inspire(robot)
 
     # ----------------------------------------------------------------------
     # Laplacian source interaction mesh (use corrected object_poses_se3 + corrected mano_keypoints)
@@ -651,7 +651,7 @@ if __name__ == "__main__":
         "--urdf_path",
         type=str,
         help="Path to robot URDF (e.g., g1_29dof_mode_15_brainco_hand.urdf)",
-        default="./assets/g1_with_brainco_hand/g1_29dof_mode_15_brainco_hand.urdf"
+        default="./assets/g1_with_inspire_hand/g1_29dof_rev_1_0_with_inspire_hands.urdf"
     )
     parser.add_argument(
         "--asset_dir",
