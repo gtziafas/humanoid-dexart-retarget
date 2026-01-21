@@ -458,6 +458,83 @@ G1_29_BRAINCO_LINK_NAMES = [
  'right_pinky_tip'
 ]
 
+# When loaded from `assets/g1_with_inspire_hand/g1_29dof_rev_1_0_with_inspire_hands.urdf` model of this repo.
+G1_29_INSPIRE_LINK_NAMES = [
+ 'pelvis',
+ 'pelvis_contour_link',
+ 'left_hip_pitch_link',
+ 'left_hip_roll_link',
+ 'left_hip_yaw_link',
+ 'left_knee_link',
+ 'left_ankle_pitch_link',
+ 'left_ankle_roll_link',
+ 'right_hip_pitch_link',
+ 'right_hip_roll_link',
+ 'right_hip_yaw_link',
+ 'right_knee_link',
+ 'right_ankle_pitch_link',
+ 'right_ankle_roll_link',
+ 'waist_yaw_link',
+ 'waist_roll_link',
+ 'torso_link',
+ 'logo_link',
+ 'head_link',
+ 'imu_in_torso',
+ 'imu_in_pelvis',
+ 'd435_link',
+ 'mid360_link',
+ 'left_shoulder_pitch_link',
+ 'left_shoulder_roll_link',
+ 'left_shoulder_yaw_link',
+ 'left_elbow_link',
+ 'left_wrist_roll_link',
+ 'left_wrist_pitch_link',
+ 'left_wrist_yaw_link',
+ 'right_shoulder_pitch_link',
+ 'right_shoulder_roll_link',
+ 'right_shoulder_yaw_link',
+ 'right_elbow_link',
+ 'right_wrist_roll_link',
+ 'right_wrist_pitch_link',
+ 'right_wrist_yaw_link',
+ 'l_hand_base_link',
+ 'l_thumb_proximal_base',
+ 'l_thumb_proximal',
+ 'l_thumb_intermediate',
+ 'l_thumb_distal',
+ 'l_index_proximal',
+ 'l_index_intermediate',
+ 'l_middle_proximal',
+ 'l_middle_intermediate',
+ 'l_ring_proximal',
+ 'l_ring_intermediate',
+ 'l_pinky_proximal',
+ 'l_pinky_intermediate',
+ 'l_thumb_tip',
+ 'l_index_tip',
+ 'l_middle_tip',
+ 'l_ring_tip',
+ 'l_pinky_tip',
+ 'r_hand_base_link',
+ 'r_thumb_proximal_base',
+ 'r_thumb_proximal',
+ 'r_thumb_intermediate',
+ 'r_thumb_distal',
+ 'r_index_proximal',
+ 'r_index_intermediate',
+ 'r_middle_proximal',
+ 'r_middle_intermediate',
+ 'r_ring_proximal',
+ 'r_ring_intermediate',
+ 'r_pinky_proximal',
+ 'r_pinky_intermediate',
+ 'r_thumb_tip',
+ 'r_index_tip',
+ 'r_middle_tip',
+ 'r_ring_tip',
+ 'r_pinky_tip'
+]
+
 MANO_TO_SHADOW_MAPPING = {
     # Wrist
     0: "palm",
@@ -539,6 +616,45 @@ MANO_TO_BRAINCO_MAPPING = {
         19: "right_pinky_distal_link",
         20: "right_pinky_tip",
     },
+}
+
+MANO_TO_INSPIRE_MAPPING = {
+    'left': {
+        0: 'l_hand_base_link',
+        1: 'l_thumb_proximal',
+        2: 'l_thumb_intermediate',
+        3: 'l_thumb_distal',
+        4: 'l_thumb_tip',
+        5: 'l_index_proximal',
+        7: 'l_index_intermediate',
+        8: 'l_index_tip',
+        9: 'l_middle_proximal',
+        11: 'l_middle_intermediate',
+        12: 'l_middle_tip',
+        13: 'l_ring_proximal',
+        15: 'l_ring_intermediate',
+        16: 'l_ring_tip',
+        17: 'l_pinky_proximal',
+        19: 'l_pinky_intermediate',
+        20: 'l_pinky_tip'},
+    'right': {
+        0: 'r_hand_base_link',
+        1: 'r_thumb_proximal',
+        2: 'r_thumb_intermediate',
+        3: 'r_thumb_tip',
+        4: 'r_thumb_tip',
+        5: 'r_index_proximal',
+        7: 'r_index_intermediate',
+        8: 'r_index_tip',
+        9: 'r_middle_proximal',
+        11: 'r_middle_intermediate',
+        12: 'r_middle_tip',
+        13: 'r_ring_proximal',
+        15: 'r_ring_intermediate',
+        16: 'r_ring_tip',
+        17: 'r_pinky_proximal',
+        19: 'r_pinky_intermediate',
+        20: 'r_pinky_tip'},
 }
 
 MANO_TO_SMPLX_MAPPING = {
@@ -679,6 +795,67 @@ def get_mapping_from_smplx_to_g1_29_brainco() -> tuple[jnp.ndarray, jnp.ndarray]
     g1_joint_retarget_indices = jnp.array(g1_joint_retarget_indices)
     return mhr_joint_retarget_indices, g1_joint_retarget_indices
 
+def get_mapping_from_smplx_to_g1_29_inspire() -> tuple[jnp.ndarray, jnp.ndarray]:
+    smplx_joint_retarget_indices_to_g1 = []
+    g1_joint_retarget_indices = []
+
+    for mhr_name, g1_name in [
+        # upper body
+        ("pelvis", "pelvis_contour_link"),
+        ('right_hip', "right_hip_roll_link"),
+        ('left_hip', "left_hip_roll_link"),
+        ('right_knee', "right_knee_link"),
+        ("left_knee", "left_knee_link"),
+        ("left_shoulder", "left_shoulder_roll_link"),
+        ("right_shoulder", "right_shoulder_roll_link"),
+        ("left_elbow", "left_elbow_link"),
+        ("right_elbow", "right_elbow_link"),
+        ('left_ankle', 'left_ankle_roll_link'),
+        ('right_ankle', "right_ankle_roll_link"),
+        ('nose_middle', 'mid360_link'),
+        # hands
+        ('left_wrist', 'l_hand_base_link'),
+        ('left_thumb1', 'l_thumb_proximal'),
+        ('left_thumb2', 'l_thumb_intermediate'),
+        ('left_thumb3', 'l_thumb_distal'),
+        ('left_thumb', 'l_thumb_tip'),
+        ('left_index2', 'l_index_proximal'),
+        ('left_index3', 'l_index_intermediate'),
+        ('left_index', 'l_index_tip'),
+        ('left_middle2', 'l_middle_proximal'),
+        ('left_middle3', 'l_middle_intermediate'),
+        ('left_middle', 'l_middle_tip'),
+        ('left_ring2', 'l_ring_proximal'),
+        ('left_ring3', 'l_ring_intermediate'),
+        ('left_ring', 'l_ring_tip'),
+        ('left_pinky2', 'l_pinky_proximal'),
+        ('left_pinky3', 'l_pinky_intermediate'),
+        ('left_pinky', 'l_pinky_tip'),
+        ('right_wrist', 'r_hand_base_link'),
+        ('right_thumb1', 'r_thumb_proximal'),
+        ('right_thumb2', 'r_thumb_intermediate'),
+        ('right_thumb3', 'r_thumb_tip'),
+        ('right_thumb', 'r_thumb_tip'),
+        ('right_index2', 'r_index_proximal'),
+        ('right_index3', 'r_index_intermediate'),
+        ('right_index', 'r_index_tip'),
+        ('right_middle2', 'r_middle_proximal'),
+        ('right_middle3', 'r_middle_intermediate'),
+        ('right_middle', 'r_middle_tip'),
+        ('right_ring2', 'r_ring_proximal'),
+        ('right_ring3', 'r_ring_intermediate'),
+        ('right_ring', 'r_ring_tip'),
+        ('right_pinky2', 'r_pinky_proximal'),
+        ('right_pinky3', 'r_pinky_intermediate'),
+        ('right_pinky', 'r_pinky_tip'),
+    ]:
+        smplx_joint_retarget_indices_to_g1.append(SMPLX_JOINT_NAMES.index(mhr_name))
+        g1_joint_retarget_indices.append(G1_29_INSPIRE_LINK_NAMES.index(g1_name))
+
+    mhr_joint_retarget_indices = jnp.array(smplx_joint_retarget_indices_to_g1)
+    g1_joint_retarget_indices = jnp.array(g1_joint_retarget_indices)
+    return mhr_joint_retarget_indices, g1_joint_retarget_indices
+
 def get_mapping_from_mano_to_shadow(robot: pk.Robot) -> tuple[jnp.ndarray, jnp.ndarray]:
     """Get the mapping indices between MANO and Shadow Hand joints."""
     SHADOW_TO_MANO_MAPPING = {v: k for k, v in MANO_TO_SHADOW_MAPPING.items()}
@@ -810,6 +987,22 @@ def get_mapping_from_mano_to_brainco(robot: pk.Robot) -> tuple[jnp.ndarray, jnp.
         if link_name in BRAINCO_TO_MANO_MAPPING:
             shadow_joint_idx.append(i)
             mano_joint_idx.append(BRAINCO_TO_MANO_MAPPING[link_name])
+
+    return jnp.array(mano_joint_idx), jnp.array(shadow_joint_idx)
+
+def get_mapping_from_mano_to_inspire(robot: pk.Robot) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """Get the mapping indices between MANO and BRAINCO joints."""
+    INSPIRE_TO_MANO_MAPPING = {
+        **{v: k for k, v in MANO_TO_INSPIRE_MAPPING['left'].items()},
+        **{v: k + 21 for k, v in MANO_TO_INSPIRE_MAPPING['right'].items()}
+    }
+    shadow_joint_idx = []
+    mano_joint_idx = []
+    link_names = robot.links.names
+    for i, link_name in enumerate(link_names):
+        if link_name in INSPIRE_TO_MANO_MAPPING:
+            shadow_joint_idx.append(i)
+            mano_joint_idx.append(INSPIRE_TO_MANO_MAPPING[link_name])
 
     return jnp.array(mano_joint_idx), jnp.array(shadow_joint_idx)
 

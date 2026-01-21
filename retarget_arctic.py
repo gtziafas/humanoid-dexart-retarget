@@ -15,7 +15,8 @@ from yourdfpy import URDF
 from scipy.spatial.transform import Rotation
 
 from utils import (
-    get_mapping_from_smplx_to_g1_29_brainco, SMPLX_JOINT_NAMES, augment_object_trajectory, create_laplacian_interaction_mesh
+    #get_mapping_from_smplx_to_g1_29_brainco, SMPLX_JOINT_NAMES, augment_object_trajectory, create_laplacian_interaction_mesh
+    get_mapping_from_smplx_to_g1_29_inspire, SMPLX_JOINT_NAMES, augment_object_trajectory, create_laplacian_interaction_mesh
 )
 
 class RetargetingWeights(TypedDict):
@@ -43,7 +44,7 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     object_id = task_id.split('_')[0]
 
     # ----------------------------------------------------------------------
-    # Load robot (G1 + Brainco hands)
+    # Load robot (G1 + Brainco / Inspire hands)
     # ----------------------------------------------------------------------
     urdf = URDF.load(urdf_path)
     robot = pk.Robot.from_urdf(urdf)
@@ -97,12 +98,12 @@ def main(urdf_path, asset_dir, task_id, obj_augm=False):
     object_keypoints_local = jnp.stack(object_keypoints_local)
     
     # ----------------------------------------------------------------------
-    # Retargeting index mapping: SMPLX joints -> G1+Brainco links
+    # Retargeting index mapping: SMPLX joints -> G1+Brainco/Inspire links
     # ----------------------------------------------------------------------
     (
         smplx_joint_retarget_indices,
         g1_joint_retarget_indices,
-    ) = get_mapping_from_smplx_to_g1_29_brainco()
+    ) = get_mapping_from_smplx_to_g1_29_inspire()
 
     smplx_joint_retarget_indices_np = onp.array(
         smplx_joint_retarget_indices, dtype=onp.int32
